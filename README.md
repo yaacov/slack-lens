@@ -51,6 +51,9 @@ slack-lens archive engineering --since 2026-01-01 --thread-depth 2 --no-files
 
 ### 4. Search Saved Content
 
+Search operates **offline** against previously archived data — it does not contact Slack.
+You must run `archive` first to download messages before searching.
+
 ```bash
 slack-lens search "migration bug" --channel engineering --since 2026-04-01
 ```
@@ -115,7 +118,7 @@ Images and files are downloaded to `archives/<channel-name>/files/`.
 
 ### `search`
 
-Search saved content.
+Search previously archived content offline (does not contact Slack).
 
 ```bash
 slack-lens search <query> [options]
