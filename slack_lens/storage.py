@@ -24,6 +24,14 @@ class FileAttachment:
     local_path: str | None = None
 
 
+def _ts_to_datetime(ts: str) -> str:
+    """Convert a Slack epoch timestamp to ISO-like readable string."""
+    try:
+        return datetime.fromtimestamp(float(ts)).strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError, OSError):
+        return ""
+
+
 @dataclass
 class Message:
     """Slack message."""
@@ -38,6 +46,11 @@ class Message:
     files: list[FileAttachment] = field(default_factory=list)
     reactions: list[dict] = field(default_factory=list)
     edited: bool = False
+    datetime: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.datetime and self.timestamp:
+            self.datetime = _ts_to_datetime(self.timestamp)
 
 
 @dataclass
@@ -134,12 +147,14 @@ class Storage:
                                 files=[FileAttachment(**f) for f in reply.get("files", [])],
                                 reactions=reply.get("reactions", []),
                                 edited=reply.get("edited", False),
+                                datetime=reply.get("datetime", ""),
                             )
                             for reply in msg.get("replies", [])
                         ],
                         files=[FileAttachment(**f) for f in msg.get("files", [])],
                         reactions=msg.get("reactions", []),
                         edited=msg.get("edited", False),
+                        datetime=msg.get("datetime", ""),
                     )
                     for msg in data["messages"]
                 ]

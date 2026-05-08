@@ -86,7 +86,8 @@ def _cmd_list(args: argparse.Namespace) -> None:
 
 def _cmd_archive(args: argparse.Namespace) -> None:
     """Archive a channel."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
+    level = logging.DEBUG if getattr(args, "debug", False) else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s  %(message)s")
 
     config = Config()
     workspace = _resolve_workspace(args, config)
@@ -328,6 +329,11 @@ def main(argv: list[str] | None = None) -> None:
     p_archive.add_argument(
         "--file-pattern",
         help="Only download files matching regex pattern",
+    )
+    p_archive.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging (dumps DOM structure for troubleshooting)",
     )
     p_archive.set_defaults(func=_cmd_archive)
 
