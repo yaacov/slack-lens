@@ -8,6 +8,7 @@ from dataclasses import asdict
 from typing import TYPE_CHECKING
 
 from slack_lens.config import Config
+from slack_lens.formatter import format_archive_txt
 from slack_lens.models import ChannelArchive, FileAttachment, Message
 
 if TYPE_CHECKING:
@@ -48,10 +49,41 @@ class Storage:
         try:
             with filepath.open("w", encoding="utf-8") as f:
                 json.dump(asdict(archive), f, indent=2, ensure_ascii=False)
-            logger.info("Saved archive to %s", filepath)
+            logger.debug("Saved archive to %s", filepath)
             return filepath
         except Exception as e:
             logger.error("Failed to save archive: %s", e)
+            raise
+
+    def save_channel_txt(
+        self,
+        archive: ChannelArchive,
+        filepath: Path | None = None,
+    ) -> Path:
+        """Save channel archive as compact text.
+
+        Args:
+            archive: Channel archive data.
+            filepath: Explicit output path.  When *None* a filename is
+                      derived from the archive metadata.
+
+        Returns:
+            Path to saved file.
+        """
+        if filepath is None:
+            filename = (
+                f"{archive.channel_name}_"
+                f"{archive.archived_at.replace(':', '-').replace(' ', '_')}.txt"
+            )
+            filepath = self.config.archives_dir / filename
+
+        try:
+            text = format_archive_txt(archive)
+            filepath.write_text(text, encoding="utf-8")
+            logger.debug("Saved text archive to %s", filepath)
+            return filepath
+        except Exception as e:
+            logger.error("Failed to save text archive: %s", e)
             raise
 
     def load_channel(self, channel_name: str) -> ChannelArchive | None:

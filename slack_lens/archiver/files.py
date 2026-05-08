@@ -122,7 +122,7 @@ def download_files(
             local_path.write_bytes(response.body())
             file_info.local_path = str(local_path)
             file_info.size = len(response.body())
-            logger.info("Downloaded: %s -> %s", file_info.name, local_path)
+            logger.debug("Downloaded: %s -> %s", file_info.name, local_path)
 
         except Exception as e:
             logger.warning("Failed to download %s: %s", file_info.name, e)

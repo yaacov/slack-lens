@@ -22,7 +22,7 @@ slack-lens --version
 ```bash
 # Replace 'my-company' with your actual workspace name
 # (e.g., if your Slack URL is acme.slack.com, use 'acme')
-slack-lens auth --workspace my-company
+slack-lens -w my-company auth
 ```
 
 This will:
@@ -35,10 +35,10 @@ This will:
 ### 2. List Available Channels
 
 ```bash
-slack-lens list
+slack-lens channels
 ```
 
-No `--workspace` needed — it uses the workspace from your last authentication.
+No `-w` needed — it uses the workspace from your last authentication.
 
 ### 3. Save a Channel
 
@@ -54,13 +54,22 @@ slack-lens archive engineering --since 2026-01-01
 
 **Without files/images:**
 ```bash
-slack-lens archive random --no-files
+slack-lens archive random --skip-files
 ```
 
-**With specific thread depth:**
+**Without thread replies:**
 ```bash
-# 0 = no threads, 1 = one level, -1 = all threads (default)
-slack-lens archive support --thread-depth 1
+slack-lens archive support --no-threads
+```
+
+**Compact text format (smaller footprint):**
+```bash
+slack-lens archive general --format txt
+```
+
+**Both JSON and text:**
+```bash
+slack-lens archive general --format both
 ```
 
 **Advanced filtering:**
@@ -68,7 +77,7 @@ slack-lens archive support --thread-depth 1
 slack-lens archive design \
   --since 2026-01-01 \
   --until 2026-03-31 \
-  --thread-depth 2 \
+  --no-threads \
   --file-pattern "\.pdf$"
 ```
 
@@ -105,10 +114,18 @@ slack-lens search "discussion" --threads-only
 slack-lens clean
 
 # Remove only auth session (forces re-login next time)
-slack-lens clean --auth
+slack-lens clean auth
 
 # Remove only saved data
-slack-lens clean --archives
+slack-lens clean archives
+```
+
+## Verbose Mode
+
+Add `-v` before the subcommand to see detailed diagnostic output (DOM walks, scroll positions, etc.):
+
+```bash
+slack-lens -v archive general --since 2026-01-01
 ```
 
 ## Where is Data Stored?
@@ -123,13 +140,13 @@ slack-lens clean --archives
 
 **"Not authenticated" error:**
 ```bash
-slack-lens auth --workspace my-company --force
+slack-lens -w my-company auth --force
 ```
 
 **"No workspace specified and no default found":**
 ```bash
 # You need to authenticate first
-slack-lens auth --workspace my-company
+slack-lens -w my-company auth
 ```
 
 **Channel not found:**
@@ -148,7 +165,6 @@ Set environment variables to customize behavior:
 ```bash
 export SLACK_LENS_HEADLESS=false  # Show browser during operations
 export SLACK_LENS_ARCHIVES_DIR=~/my-data  # Change save location
-export SLACK_LENS_DEFAULT_THREAD_DEPTH=0  # Don't expand threads by default
 ```
 
 Or create a `.env` file in the project directory:
@@ -156,5 +172,4 @@ Or create a `.env` file in the project directory:
 ```env
 SLACK_LENS_HEADLESS=false
 SLACK_LENS_ARCHIVES_DIR=/path/to/data
-SLACK_LENS_DEFAULT_THREAD_DEPTH=0
 ```

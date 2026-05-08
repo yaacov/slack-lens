@@ -128,7 +128,11 @@ def cmd_archive(args: argparse.Namespace) -> None:
         )
 
         archiver = ChannelArchiver(client=client, config=config)
-        archiver.archive_channel(channel=channel, options=options)
+        archiver.archive_channel(
+            channel=channel,
+            options=options,
+            output_format=args.output_format,
+        )
 
     except SystemExit:
         raise

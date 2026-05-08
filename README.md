@@ -28,15 +28,15 @@ slack-lens setup
 ### 1. Authenticate
 
 ```bash
-slack-lens auth --workspace your-workspace
+slack-lens -w your-workspace auth
 ```
 
-This opens a browser window where you can log in via SSO. The session and workspace are saved for future use — you won't need to specify `--workspace` again.
+This opens a browser window where you can log in via SSO. The session and workspace are saved for future use — you won't need to specify `-w` again.
 
 ### 2. List Channels
 
 ```bash
-slack-lens list
+slack-lens channels
 ```
 
 ### 3. View/Save a Channel
@@ -46,7 +46,10 @@ slack-lens list
 slack-lens archive general
 
 # Save with filters
-slack-lens archive engineering --since 2026-01-01 --thread-depth 2 --no-files
+slack-lens archive engineering --since 2026-01-01 --no-threads --skip-files
+
+# Save as compact text instead of JSON
+slack-lens archive general --format txt
 ```
 
 ### 4. Search Saved Content
@@ -65,10 +68,22 @@ slack-lens search "migration bug" --channel engineering --since 2026-04-01
 slack-lens clean
 
 # Remove only auth/session data
-slack-lens clean --auth
+slack-lens clean auth
 
 # Remove only saved channel data
-slack-lens clean --archives
+slack-lens clean archives
+```
+
+## Global Options
+
+These flags apply to all subcommands and must be placed **before** the subcommand name:
+
+- `-w`, `--workspace` - Slack workspace name (e.g., `my-company` for `my-company.slack.com`). Defaults to the last authenticated workspace.
+- `-v`, `--verbose` - Enable verbose (debug) logging. Shows DOM diagnostics, scroll positions, and other internal details.
+- `--version` - Show version number
+
+```bash
+slack-lens -w my-company -v archive general --since 2026-01-01
 ```
 
 ## Commands
@@ -78,25 +93,21 @@ slack-lens clean --archives
 Authenticate with Slack workspace via browser.
 
 ```bash
-slack-lens auth --workspace <workspace-name>
+slack-lens -w <workspace-name> auth
 ```
 
 Options:
-- `--workspace` - Slack workspace name (e.g., `my-company` for `my-company.slack.com`)
 - `--force` - Force re-authentication even if session exists
 
 After first authentication, the workspace becomes the default for all commands.
 
-### `list`
+### `channels`
 
 List available channels in the workspace.
 
 ```bash
-slack-lens list
+slack-lens channels
 ```
-
-Options:
-- `--workspace` - Override workspace (default: last authenticated workspace)
 
 ### `archive`
 
@@ -107,12 +118,12 @@ slack-lens archive <channel-name> [options]
 ```
 
 Options:
-- `--workspace` - Override workspace (default: last authenticated workspace)
 - `--since YYYY-MM-DD` - Messages from this date forward
 - `--until YYYY-MM-DD` - Messages up to this date
-- `--thread-depth N` - How deep to expand threads (0=no threads, -1=all, default: -1)
-- `--no-files` - Skip file/image downloads
+- `--no-threads` - Skip thread replies (threads are included by default)
+- `--skip-files` - Skip file/image downloads
 - `--file-pattern REGEX` - Only download files matching pattern
+- `--format {json,txt,both}` - Output format (default: `json`). `txt` produces a compact human-readable log; `both` saves both formats side by side
 
 Images and files are downloaded to `archives/<channel-name>/files/`.
 
@@ -137,13 +148,13 @@ Options:
 Remove cached authentication and/or saved data.
 
 ```bash
-slack-lens clean [options]
+slack-lens clean [target]
 ```
 
-Options:
-- `--auth` - Remove only authentication/session data
-- `--archives` - Remove only saved channel data
-- `--all` - Remove both (default if no flag given)
+Targets:
+- `auth` - Remove only authentication/session data
+- `archives` - Remove only saved channel data
+- `all` - Remove both (this is the default when no target is given)
 
 ## Configuration
 
@@ -153,7 +164,7 @@ Available settings:
 - `AUTH_FILE` - Path to authentication file (default: `~/.slack-lens/slack_auth.json`)
 - `ARCHIVES_DIR` - Directory for saved data (default: `./archives`)
 - `HEADLESS` - Run browser headless (default: `true`, except for auth)
-- `DEFAULT_THREAD_DEPTH` - Default thread expansion depth (default: `-1`)
+- `PAGE_SCROLL_DELAY` - Delay between scrolls in seconds (default: `1.5`)
 
 ## Data Format
 
