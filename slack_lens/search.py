@@ -4,32 +4,21 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from slack_lens.storage import ChannelArchive, Message, Storage
+from slack_lens.models import ChannelArchive, Message, SearchResult
+
+if TYPE_CHECKING:
+    from slack_lens.storage import Storage
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class SearchResult:
-    """Search result with context."""
-
-    channel_name: str
-    message: Message
-    matches: list[str]
 
 
 class SearchEngine:
     """Search engine for archived content."""
 
     def __init__(self, storage: Storage):
-        """Initialize search engine.
-
-        Args:
-            storage: Storage manager
-        """
         self.storage = storage
 
     def search_text(
@@ -42,29 +31,14 @@ class SearchEngine:
         with_files: bool = False,
         threads_only: bool = False,
     ) -> list[SearchResult]:
-        """Search for text in archived messages.
-
-        Args:
-            query: Search query (supports regex)
-            channel_name: Limit to specific channel
-            user_name: Filter by user
-            since: Only messages after this date
-            until: Only messages before this date
-            with_files: Only messages with attachments
-            threads_only: Only messages with replies
-
-        Returns:
-            List of search results
-        """
-        results = []
+        """Search for text in archived messages."""
+        results: list[SearchResult] = []
         pattern = re.compile(query, re.IGNORECASE)
 
-        # Load archives
         archives = self._load_archives(channel_name)
 
         for archive in archives:
             for message in archive.messages:
-                # Apply filters
                 if not self._matches_filters(
                     message,
                     user_name=user_name,
@@ -75,7 +49,6 @@ class SearchEngine:
                 ):
                     continue
 
-                # Search in message text
                 matches = pattern.findall(message.text)
                 if matches:
                     results.append(
@@ -86,7 +59,6 @@ class SearchEngine:
                         )
                     )
 
-                # Search in thread replies
                 for reply in message.replies:
                     if not self._matches_filters(
                         reply,
@@ -113,25 +85,15 @@ class SearchEngine:
         self,
         channel_name: str | None = None,
     ) -> list[ChannelArchive]:
-        """Load archives for searching.
-
-        Args:
-            channel_name: Limit to specific channel
-
-        Returns:
-            List of channel archives
-        """
-        archives = []
+        """Load archives for searching."""
+        archives: list[ChannelArchive] = []
 
         if channel_name:
-            # Load specific channel
             archive = self.storage.load_channel(channel_name)
             if archive:
                 archives.append(archive)
         else:
-            # Load all archives
             for filepath in self.storage.list_archives():
-                # Extract channel name from filename
                 name = filepath.stem.rsplit("_", 1)[0]
                 archive = self.storage.load_channel(name)
                 if archive:
@@ -139,8 +101,8 @@ class SearchEngine:
 
         return archives
 
+    @staticmethod
     def _matches_filters(
-        self,
         message: Message,
         user_name: str | None = None,
         since: datetime | None = None,
@@ -148,24 +110,10 @@ class SearchEngine:
         with_files: bool = False,
         threads_only: bool = False,
     ) -> bool:
-        """Check if message matches filters.
-
-        Args:
-            message: Message to check
-            user_name: Filter by user
-            since: Only messages after this date
-            until: Only messages before this date
-            with_files: Only messages with attachments
-            threads_only: Only messages with replies
-
-        Returns:
-            True if message matches all filters
-        """
-        # User filter
+        """Check if message matches filters."""
         if user_name and message.user_name != user_name:
             return False
 
-        # Date filters
         if since or until:
             try:
                 msg_time = datetime.fromtimestamp(float(message.timestamp))
@@ -174,15 +122,10 @@ class SearchEngine:
                 if until and msg_time > until:
                     return False
             except (ValueError, TypeError):
-                logger.warning(f"Invalid timestamp: {message.timestamp}")
+                logger.warning("Invalid timestamp: %s", message.timestamp)
                 return False
 
-        # Files filter
         if with_files and not message.files:
             return False
 
-        # Threads filter
-        if threads_only and not message.replies:
-            return False
-
-        return True
+        return not (threads_only and not message.replies)

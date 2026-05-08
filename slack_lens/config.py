@@ -39,10 +39,6 @@ class Config(BaseSettings):
     )
 
     # Archival settings
-    default_thread_depth: int = Field(
-        default=-1,
-        description="Default thread depth (-1 for all threads)",
-    )
     page_scroll_delay: float = Field(
         default=1.5,
         description="Delay between scrolls when loading messages (seconds)",
